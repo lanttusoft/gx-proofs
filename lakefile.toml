@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2025-2026 lanttu, opencode
+# This file is part of gX proofs. See LICENSE.
+
+name = "gx-proofs"
+version = "0.1.0"
+
+#opencode: GxProofs stays core-only (blocking gate, no network).
+#   GxProofsGfx + GxMath below are the opt-in Mathlib tier (same pin
+#   as the author's earlier Lean work, rev v4.27.0) — built via `make proofs-full`,
+#   never in `make check`, so program users without the cache
+#   never pay. GxMath (gxmath foundation) salvaged from the author's earlier Lean work.
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.27.0"
+
+[[lean_lib]]
+name = "GxProofs"
+
+[[lean_lib]]
+name = "GxProofsGfx"
+
+[[lean_lib]]
+name = "GxMath"

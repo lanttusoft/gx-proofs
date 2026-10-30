@@ -1,0 +1,1173 @@
+{
+  "version": 1,
+  "policy": "SIGNIFICANCE.md",
+  "defaults": {
+    "GxProofs": {
+      "importance": "A",
+      "significance": 60
+    },
+    "GxProofsGfx": {
+      "importance": "B",
+      "significance": 40
+    },
+    "GxMath": {
+      "importance": "A",
+      "significance": 60
+    }
+  },
+  "modules": {
+    "GxProofs.MatrixAccess": {
+      "importance": "K",
+      "significance": 95,
+      "justification": "Matrix field order and transpose access underpin every camera and upload convention.",
+      "source": [
+        "src/gxmath/matrix.c",
+        "src/common/types/matrix.h"
+      ],
+      "guard": "scripts/test_inverse_contract.py",
+      "gate": "make proofs-full",
+      "scope": "row/column access and physical field correspondence",
+      "gaps": [
+        "GLSL execution and driver upload remain external"
+      ]
+    },
+    "GxProofs.MainDataSwitch": {
+      "importance": "K",
+      "significance": 90,
+      "justification": "The scene-switch handshake can leave the kernel in an inconsistent state.",
+      "source": [
+        "src/main_update.c",
+        "src/main.h"
+      ],
+      "gate": "make proofs",
+      "scope": "flag machine and responder contract",
+      "gaps": [
+        "The CMake/link boundary is enforced natively, not proved"
+      ],
+      "guard": "scripts/test_proof_source_contract.py"
+    },
+    "GxProofs.ModuleInfoConsistency": {
+      "importance": "K",
+      "significance": 90,
+      "justification": "The moduleInfo mirror must agree with the compiled kernel/full-stack flags.",
+      "source": [
+        "src/main_load.c",
+        "src/main.h"
+      ],
+      "gate": "make proofs",
+      "scope": "enable/exists flag mirror",
+      "gaps": [
+        "Build graph and link closure are native premises"
+      ],
+      "guard": "scripts/test_proof_source_contract.py"
+    },
+    "GxProofs.RhiFbo": {
+      "importance": "K",
+      "significance": 90,
+      "justification": "FBO binding/cache errors can corrupt every subsequent pass.",
+      "source": [
+        "src/rhi/rhi_fbo.c"
+      ],
+      "gate": "make proofs",
+      "scope": "draw/read binding cache and inspection restoration",
+      "gaps": [
+        "Driver error behavior and coherent cache are assumptions"
+      ],
+      "guard": "scripts/test_proof_source_contract.py"
+    },
+    "GxProofs.RhiState": {
+      "importance": "K",
+      "significance": 85,
+      "justification": "Blend/depth state leaks change rendering globally.",
+      "source": [
+        "src/rhi/rhi_state.c"
+      ],
+      "gate": "make proofs",
+      "scope": "state cache and blend modes",
+      "gaps": [
+        "Color mask, depth func and some GL state are unmodeled"
+      ],
+      "guard": "scripts/test_proof_source_contract.py"
+    },
+    "GxProofs.RhiStateScope": {
+      "importance": "K",
+      "significance": 85,
+      "justification": "Unrestored scoped state can contaminate following passes.",
+      "source": [
+        "src/rhi/rhi_state.c"
+      ],
+      "gate": "make proofs",
+      "scope": "scoped save/restore contract",
+      "gaps": [
+        "Caller discipline and driver behavior remain external"
+      ],
+      "guard": "scripts/test_proof_source_contract.py"
+    },
+    "GxProofs.PoolAlloc": {
+      "importance": "K",
+      "significance": 85,
+      "justification": "Allocator metadata errors cause corruption rather than visual defects.",
+      "source": [
+        "src/common/pool.c"
+      ],
+      "guard": "scripts/runtime_input_check.py",
+      "gate": "make runtime-input-check",
+      "scope": "tracked allocation bookkeeping",
+      "gaps": [
+        "Allocation failure and thread-safety semantics are bounded by tests"
+      ]
+    },
+    "GxProofs.TemporalHistory": {
+      "importance": "A",
+      "significance": 80,
+      "justification": "History validity controls temporal continuity across frames.",
+      "source": [
+        "src/renderer/gfx/temporal_history.c"
+      ],
+      "gate": "make proofs",
+      "scope": "clear/begin/abort/commit/reset lifecycle",
+      "gaps": [
+        "GPU completion and attachment metadata coherence are assumptions"
+      ],
+      "guard": "scripts/test_proof_source_contract.py"
+    },
+    "GxProofs.TemporalSnapshots": {
+      "importance": "A",
+      "significance": 80,
+      "justification": "Snapshot provenance controls TAA/motion-blur camera reconstruction.",
+      "source": [
+        "src/renderer/gfx/taa.c",
+        "src/renderer/gfx/motionblur.c"
+      ],
+      "gate": "make proofs",
+      "scope": "VP snapshot and history-camera provenance",
+      "gaps": [
+        "Arbitrary frame schedules are not certified"
+      ],
+      "guard": "scripts/test_proof_source_contract.py"
+    },
+    "GxProofsGfx.Kernel.MainDataRefresh": {
+      "importance": "K",
+      "significance": 90,
+      "justification": "Resolution-ladder errors change render targets and input coordinates.",
+      "source": [
+        "src/main_load.c",
+        "src/main.h"
+      ],
+      "gate": "make proofs-full",
+      "scope": "Conditional real-valued render-scale bounds; U16 truncation and float execution excluded",
+      "gaps": [
+        "No IEEE F32 or U16 overflow/rounding proof",
+        "Render scale range is a caller premise"
+      ],
+      "guard": "scripts/test_window_resize_contract.py"
+    },
+    "GxProofsGfx.Kernel.MainDataReset": {
+      "importance": "K",
+      "significance": 90,
+      "justification": "Reset defaults define the startup window/render contract.",
+      "source": [
+        "src/main_load.c",
+        "src/common/config.h"
+      ],
+      "gate": "make proofs-full",
+      "scope": "Default 1536x1152 dimensions and reset consistency",
+      "gaps": [
+        "Monitor-fit path is not modeled by Reset",
+        "CLI override parsing and U16 field semantics are external"
+      ],
+      "guard": "scripts/test_window_resize_contract.py"
+    },
+    "GxProofsGfx.Kernel.WindowResize": {
+      "importance": "B",
+      "significance": 55,
+      "justification": "Resize synchronization controls the viewport and window-sized GUI targets.",
+      "source": [
+        "src/gui/gui.c"
+      ],
+      "guard": "scripts/test_window_resize_contract.py",
+      "gate": "make proofs-full",
+      "scope": "Strict size acceptance, same-size no-op, logical-size preservation and target reload request",
+      "gaps": [
+        "OS event delivery, float viewport geometry and successful GPU allocation remain external"
+      ]
+    },
+    "GxProofsGfx.Temporal.TemporalMatrix": {
+      "importance": "K",
+      "significance": 95,
+      "justification": "Physical matrix order and GL_TRUE upload define camera and shadow correctness.",
+      "source": [
+        "src/gxmath/matrix.c",
+        "src/renderer/gfx/taa.c"
+      ],
+      "guard": "scripts/reprojection_residual_check.py",
+      "gate": "make reprojection-residual-check",
+      "scope": "field permutation, upload, view-then-projection",
+      "gaps": [
+        "IEEE inversion and frame snapshot chronology remain unproved"
+      ]
+    },
+    "GxProofsGfx.Temporal.ReprojectionError": {
+      "importance": "A",
+      "significance": 85,
+      "justification": "Residual propagation supplies the quantitative reprojection bounds.",
+      "source": [
+        "src/renderer/gfx/taa.c"
+      ],
+      "guard": "scripts/reprojection_residual_check.py",
+      "gate": "make reprojection-residual-check",
+      "scope": "conditional residual-to-pixel/depth bounds",
+      "gaps": [
+        "GPU/storage uncertainty and Hilbert budget misses remain external"
+      ]
+    },
+    "GxProofsGfx.Temporal.WeightedReprojection": {
+      "importance": "A",
+      "significance": 80,
+      "justification": "Componentwise weights refine the uniform reprojection envelope.",
+      "source": [
+        "src/renderer/gfx/taa.c"
+      ],
+      "guard": "scripts/reprojection_residual_check.py",
+      "gate": "make reprojection-residual-check",
+      "scope": "weighted absolute residual bounds",
+      "gaps": [
+        "Finite inverse accuracy remains conditional"
+      ]
+    },
+    "GxProofsGfx.Temporal.DepthInputError": {
+      "importance": "A",
+      "significance": 80,
+      "justification": "Depth/UV/jitter input errors directly perturb reprojection.",
+      "source": [
+        "resources/shader/gfx_taa_resolve.frag"
+      ],
+      "guard": "scripts/depth_input_check.py",
+      "gate": "make depth-input-check",
+      "scope": "shader depth input sensitivity",
+      "gaps": [
+        "Actual GPU depth storage and filtering are not certified"
+      ]
+    },
+    "GxProofsGfx.Temporal.TemporalSampling": {
+      "importance": "A",
+      "significance": 75,
+      "justification": "Bilinear footprint and rejection boundaries control temporal sampling.",
+      "source": [
+        "src/renderer/gfx/taa.c"
+      ],
+      "guard": "scripts/reprojection_residual_check.py",
+      "gate": "make reprojection-residual-check",
+      "scope": "projection/jitter and bilinear sampling algebra",
+      "gaps": [
+        "Surface identity and matrix inversion remain external"
+      ]
+    },
+    "GxProofsGfx.Temporal.CofactorInverse": {
+      "importance": "A",
+      "significance": 75,
+      "justification": "Camera reconstruction depends on the ideal inverse product.",
+      "source": [
+        "src/gxmath/matrix.c"
+      ],
+      "guard": "scripts/test_inverse_contract.py",
+      "gate": "make proofs-full",
+      "scope": "exact cofactor/determinant inverse and camera bridge",
+      "gaps": [
+        "IEEE finite-inverse accuracy is not certified"
+      ]
+    },
+    "GxMath.Matrix": {
+      "importance": "A",
+      "significance": 85,
+      "justification": "Logical 4x4 algebra is the reference for all matrix contracts.",
+      "source": [
+        "src/gxmath/matrix.c"
+      ],
+      "guard": "scripts/test_inverse_contract.py",
+      "gate": "make math-check",
+      "scope": "logical row-major matrix algebra",
+      "gaps": [
+        "Float execution and projection/rotation constructors are not all covered"
+      ]
+    },
+    "GxMath.CofactorInverse": {
+      "importance": "A",
+      "significance": 85,
+      "justification": "The exact inverse contract is the ground truth for camera reconstruction.",
+      "source": [
+        "src/gxmath/matrix.c"
+      ],
+      "guard": "scripts/test_inverse_contract.py",
+      "gate": "make math-check",
+      "scope": "exact rational cofactor/inverse algebra",
+      "gaps": [
+        "Singular C behavior and finite precision remain external"
+      ]
+    },
+    "GxMath.Quaternion": {
+      "importance": "A",
+      "significance": 75,
+      "justification": "Quaternion algebra, orientation and interpolation underpin engine animation; exact-real rotation and branch-aware interpolation contracts are paired with source and bounded native witnesses.",
+      "source": [
+        "src/gxmath/quaternion.c",
+        "src/gxmath/vector3.c",
+        "src/gxmath/macros.h"
+      ],
+      "gate": "make math-check",
+      "scope": "exact-real algebra, homogeneous vector action, unit-only matrix agreement and branch-aware Lerp/Nlerp/Slerp model",
+      "gaps": [
+        "IEEE rounding at branch boundaries, trig/normalization accuracy and a universal C-to-real execution proof remain external"
+      ],
+      "guard": "scripts/test_quaternion_rotation_contract.py"
+    },
+    "GxMath.Physics": {
+      "importance": "A",
+      "significance": 75,
+      "justification": "Physics helpers define EM, dipole and thermal behavior.",
+      "source": [
+        "src/gxmath/physics.c"
+      ],
+      "gate": "make math-check",
+      "scope": "SI-exact force/radiation contracts",
+      "gaps": [
+        "Domain NaN guards and Float execution are not modeled"
+      ],
+      "guard": "scripts/math_pass.py"
+    },
+    "GxProofsGfx.Matrix.MatrixField": {
+      "importance": "A",
+      "significance": 75,
+      "justification": "Field-level matrix order is the bridge to the physical C struct.",
+      "source": [
+        "src/gxmath/matrix.c",
+        "src/common/types/matrix.h"
+      ],
+      "guard": "scripts/test_inverse_contract.py",
+      "gate": "make proofs-full",
+      "scope": "flat multiply/transpose identities",
+      "gaps": [
+        "No direct GL readback certification"
+      ]
+    },
+    "GxProofsGfx.Matrix.MatrixTuple": {
+      "importance": "A",
+      "significance": 75,
+      "justification": "Tuple interpretation pins the abstract upload transpose convention.",
+      "source": [
+        "src/gxmath/matrix.c",
+        "src/common/types/matrix.h"
+      ],
+      "guard": "scripts/test_inverse_contract.py",
+      "gate": "make proofs-full",
+      "scope": "Mathlib matrix tuple upload interpretation",
+      "gaps": [
+        "Abstract transpose is not a driver readback proof"
+      ]
+    },
+    "GxProofsGfx.Matrix.MatrixBridge": {
+      "importance": "A",
+      "significance": 70,
+      "justification": "Bridge conversions keep flat, clip and logical matrix models coherent.",
+      "source": [
+        "src/gxmath/matrix.c",
+        "src/common/types/matrix.h"
+      ],
+      "guard": "scripts/test_inverse_contract.py",
+      "gate": "make proofs-full",
+      "scope": "flat/clip/logical matrix conversions",
+      "gaps": [
+        "Physical byte layout remains a separate premise"
+      ]
+    },
+    "GxProofsGfx.Ssr.PlanarReflection": {
+      "importance": "A",
+      "significance": 75,
+      "justification": "Planar reflection geometry drives mirror/reflection correctness.",
+      "source": [
+        "src/renderer/gfx/mirror.c"
+      ],
+      "guard": "scripts/planar_geometry_check.py",
+      "gate": "make planar-geometry-check",
+      "scope": "unit-normal reflection and projective UV correspondence",
+      "gaps": [
+        "GPU culling and exact LookAt normalization remain external"
+      ]
+    },
+    "GxProofsGfx.Ssr.ReflectionHandedness": {
+      "importance": "A",
+      "significance": 70,
+      "justification": "Reflected orientation errors invert visible geometry.",
+      "source": [
+        "src/renderer/gfx/mirror.c"
+      ],
+      "guard": "scripts/reflection_handedness_check.py",
+      "gate": "make reflection-handedness-check",
+      "scope": "reflected basis, handedness and conditional winding",
+      "gaps": [
+        "Production culling behavior is not certified"
+      ]
+    },
+    "GxProofsGfx.Ssr.SsrRayCoverage": {
+      "importance": "B",
+      "significance": 65,
+      "justification": "Ray/plane coverage explains SSR misses and reflection mismatch.",
+      "source": [
+        "src/renderer/gfx/draw.c"
+      ],
+      "guard": "scripts/test_ssr_coverage_contract.py",
+      "gate": "make proofs",
+      "scope": "analytic ray/plane validity and off-plane parallax",
+      "gaps": [
+        "GPU visibility remains unproved"
+      ]
+    },
+    "GxProofsGfx.Ssr.ProbeBoxExit": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Illustrative probe-box exit counterexample, not a production policy.",
+      "source": [
+        "src/renderer/gfx/draw.c"
+      ],
+      "guard": "scripts/test_probe_box_contract.py",
+      "gate": "make probe-check",
+      "scope": "owned-fixture exit witness",
+      "gaps": [
+        "Not a general probe-volume proof"
+      ]
+    },
+    "GxProofsGfx.Renderer.CubemapGeometry": {
+      "importance": "A",
+      "significance": 70,
+      "justification": "Cubemap face mapping errors affect shadows, IBL and sky sampling.",
+      "source": [
+        "src/renderer/cubemap.c"
+      ],
+      "guard": "scripts/cubemap_geometry_check.py",
+      "gate": "make cubemap-geometry-check",
+      "scope": "six-face coordinate/direction recovery",
+      "gaps": [
+        "Hardware seams, filtering and arbitrary FOV remain external"
+      ]
+    },
+    "GxProofsGfx.Renderer.CsmContracts": {
+      "importance": "B",
+      "significance": 65,
+      "justification": "Cascade selection/fade errors cause visible shadow discontinuities.",
+      "source": [
+        "src/renderer/gfx/light.c"
+      ],
+      "guard": "scripts/csm_contract_check.py",
+      "gate": "make csm-contract-check",
+      "scope": "ordered split/fade and projection bounds",
+      "gaps": [
+        "GPU depth/filtering and full cascade coverage are external"
+      ]
+    },
+    "GxProofsGfx.Renderer.PointShadowDepth": {
+      "importance": "B",
+      "significance": 65,
+      "justification": "Radial depth and comparison semantics control point shadows.",
+      "source": [
+        "resources/shader/gfx_pointdepth.frag"
+      ],
+      "guard": "scripts/point_shadow_depth_check.py",
+      "gate": "make point-shadow-depth-check",
+      "scope": "radial depth and strict comparison",
+      "gaps": [
+        "Texture storage, filtering and GPU sqrt are external"
+      ]
+    },
+    "GxProofsGfx.Postprocess.GtaoContracts": {
+      "importance": "B",
+      "significance": 55,
+      "justification": "GTAO reconstruction/horizon errors produce visible AO stripes.",
+      "source": [
+        "resources/shader/gfx_gtao_accum.frag"
+      ],
+      "guard": "scripts/test_gtao_contract_check.py",
+      "gate": "make gtao-contract-check",
+      "scope": "reconstruction, horizon and blur algebra",
+      "gaps": [
+        "Normalization, pow and GPU execution remain external"
+      ]
+    },
+    "GxProofsGfx.Postprocess.SsgiContracts": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "SSGI fallback and confidence errors cause banding or missing bounce.",
+      "source": [
+        "resources/shader/gfx_ssgi_accum.frag"
+      ],
+      "gate": "make ssgi-contract-check",
+      "scope": "tangent/fallback/confidence algebra",
+      "gaps": [
+        "No source-drift guard entry yet; HDR radiance is external"
+      ]
+    },
+    "GxProofsGfx.Postprocess.PostprocessContracts": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Postprocess target/UV errors affect every effect pass.",
+      "source": [
+        "src/renderer/postprocess.c"
+      ],
+      "gate": "make postprocess-contract-check",
+      "scope": "target normalization and empty-chain routing",
+      "gaps": [
+        "GPU shader execution and feedback convergence remain external"
+      ]
+    },
+    "GxProofsGfx.Weather.WeatherContracts": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Weather wrap/spawn bounds prevent visible discontinuities and invalid bands.",
+      "source": [
+        "src/renderer/gfx/weather.c"
+      ],
+      "guard": "scripts/weather_godray_contract_check.py",
+      "gate": "make weather-follow-check",
+      "scope": "wrap, spawn and band bounds",
+      "gaps": [
+        "C remainder/random and GPU motion remain external"
+      ]
+    },
+    "GxProofsGfx.Audio.Attenuation": {
+      "importance": "B",
+      "significance": 40,
+      "justification": "Audio attenuation and pan bounds affect the audible mix.",
+      "source": [
+        "src/audio"
+      ],
+      "gate": "make proofs-full",
+      "scope": "attenuation and pan clamping",
+      "gaps": [
+        "No audio hardware or mixer integration proof"
+      ]
+    },
+    "GxProofsGfx.Audio.Envelope": {
+      "importance": "B",
+      "significance": 35,
+      "justification": "Envelope step bounds prevent clicks and out-of-range gain.",
+      "source": [
+        "src/audio"
+      ],
+      "gate": "make proofs-full",
+      "scope": "ADSR step and value bounds",
+      "gaps": [
+        "Sample-rate scheduling and real-time execution external"
+      ]
+    },
+    "GxProofsGfx.Audio.SynthFilter": {
+      "importance": "B",
+      "significance": 40,
+      "justification": "Filter/LFO bounds keep synthesized output stable.",
+      "source": [
+        "src/audio"
+      ],
+      "gate": "make proofs-full",
+      "scope": "cutoff/resonance and LFO bounds",
+      "gaps": [
+        "Actual DSP execution and nonlinearities external"
+      ]
+    },
+    "GxProofsGfx.Renderer.LabelContracts": {
+      "importance": "B",
+      "significance": 32,
+      "justification": "Label fit/anchor errors are visible UI defects with bounded impact.",
+      "source": [
+        "src/common/utils/billboard.c"
+      ],
+      "gate": "make proofs-full",
+      "scope": "fit/anchor/padding/UV",
+      "gaps": [
+        "Rasterizer, atlas coverage and GPU filtering external"
+      ]
+    },
+    "GxProofsGfx.Renderer.Snap": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Grid snap is a tooling convenience, not an engine invariant.",
+      "source": [
+        "src/tools"
+      ],
+      "gate": "make proofs-full",
+      "scope": "grid snap arithmetic",
+      "gaps": [
+        "No UI integration proof"
+      ]
+    },
+    "GxProofsGfx.Postprocess.LensflareGhost": {
+      "importance": "C",
+      "significance": 25,
+      "justification": "Lensflare ghost geometry is an optional visual effect.",
+      "source": [
+        "src/renderer/gfx/lensflare.c"
+      ],
+      "gate": "make lensflare-check",
+      "scope": "ghost geometry",
+      "gaps": [
+        "Optical/visual quality is not certified"
+      ]
+    },
+    "GxMath.Easing": {
+      "importance": "B",
+      "significance": 30,
+      "justification": "Easing bounds affect animation/UI, not engine state.",
+      "source": [
+        "src/gxmath/easing.c"
+      ],
+      "gate": "make math-check",
+      "scope": "selected scalar curves",
+      "gaps": [
+        "Vector curves and full dispatch are missing"
+      ]
+    },
+    "GxProofs.AiInput": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "AI input routing is event-scoped and does not persist state."
+    },
+    "GxProofs.BufferPool": {
+      "importance": "B",
+      "significance": 55,
+      "justification": "Pool bookkeeping correctness is bounded by allocator tests."
+    },
+    "GxProofs.CascadeSplits": {
+      "importance": "B",
+      "significance": 55,
+      "justification": "Cascade split arithmetic affects shadow quality, not engine state."
+    },
+    "GxProofs.DockMargins": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Dock feasibility is presentation layout policy.",
+      "source": [
+        "src/gui/gui.c"
+      ],
+      "guard": "scripts/test_window_resize_contract.py",
+      "gate": "make proofs",
+      "scope": "320px left margin and 0.70 width/height feasibility threshold",
+      "gaps": [
+        "Exact Nat ratio model does not certify F32 boundary decisions or monitor sizing"
+      ]
+    },
+    "GxProofs.DockRestore": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Dock restore state is reversible UI state.",
+      "source": [
+        "src/gui/gui.c"
+      ],
+      "guard": "scripts/test_window_resize_contract.py",
+      "gate": "make proofs",
+      "scope": "Eight-pixel close tolerance and preservation of user resize",
+      "gaps": [
+        "Window manager response and asynchronous resize delivery are external"
+      ]
+    },
+    "GxProofs.DrawState": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Draw state ordering affects pass correctness with bounded scope."
+    },
+    "GxProofs.EditLock": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Editor edit locking is a tooling concern."
+    },
+    "GxProofs.EffectSources": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Effect-source routing is renderer pipeline policy."
+    },
+    "GxProofs.ElementState": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "GUI element state is reversible presentation state."
+    },
+    "GxProofs.EmissiveFill": {
+      "importance": "B",
+      "significance": 30,
+      "justification": "Emissive fallback affects material appearance."
+    },
+    "GxProofs.EventLog": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Event log bookkeeping is observational."
+    },
+    "GxProofs.FocusRing": {
+      "importance": "C",
+      "significance": 15,
+      "justification": "Focus-ring geometry is presentation-only."
+    },
+    "GxProofs.GLState": {
+      "importance": "B",
+      "significance": 60,
+      "justification": "Cached GL state must stay coherent with issued calls."
+    },
+    "GxProofs.GfxConstants": {
+      "importance": "B",
+      "significance": 35,
+      "justification": "Numeric renderer constants are pinned values, not behavior."
+    },
+    "GxProofs.GfxCameraRender": {
+      "importance": "B",
+      "significance": 65,
+      "justification": "The editor camera render flow temporarily changes the authoring camera and marker visibility across frames.",
+      "source": [
+        "src/tools/gfx/gfx_editor.cpp"
+      ],
+      "guard": "scripts/test_gfx_camera_render_contract.py",
+      "gate": "make proofs",
+      "scope": "One render request: invalid selection, apply, capture outcome and restoration of view/marker state",
+      "gaps": [
+        "Restoration requires a subsequent tick with a renderer; free-camera scheduling and overlapping requests are outside the model",
+        "Image contents and successful file export are not proved; make gfx-camera-render-check checks rendered output but not same-process restoration"
+      ]
+    },
+    "GxProofs.GfxPresetOverwrite": {
+      "importance": "B",
+      "significance": 65,
+      "justification": "Explicit confirmation protects authored presets from accidental replacement.",
+      "source": [
+        "src/tools/gfx/gfx_editor.cpp"
+      ],
+      "guard": "scripts/test_gfx_preset_overwrite_contract.py",
+      "gate": "make proofs",
+      "scope": "One save request: empty/new/existing paths, confirmation, cancel and commit-attempt counts",
+      "gaps": [
+        "A commit attempt is not proof of successful disk I/O; UI delivery and overlapping requests are outside the model",
+        "The existing make gfx-preset-overwrite-check runtime test verifies prompt, cancel and confirmed file changes"
+      ]
+    },
+    "GxProofs.GfxLightShadowSlots": {
+      "importance": "B",
+      "significance": 65,
+      "justification": "Light-slot reuse and shared point-shadow ownership affect renderer state and shadow validity.",
+      "source": [
+        "src/renderer/gfx/light.c",
+        "src/renderer/gfx/shader.c",
+        "src/renderer/gfx/boilerplate.h",
+        "src/renderer/gfx/draw.c",
+        "src/renderer/gfx/load.c",
+        "src/renderer/gfx/scene.c",
+        "src/renderer/gfx/constants.h",
+        "src/renderer/gfx.c",
+        "src/common/heap.c",
+        "resources/shader/standard.frag"
+      ],
+      "guard": "scripts/test_gfx_light_shadow_slots_contract.py",
+      "gate": "make proofs",
+      "scope": "Two-slot lifecycle and lazy demand scan plus 64-slot/384-layer arithmetic: valid-pair non-aliasing and guarded overflow skip with a source-pinned 128-slot light heap",
+      "gaps": [
+        "The model represents source failure cleanup as a reset; it does not establish that GPU failure occurs or that a later allocation succeeds. GPU resource validity, depth rendering and sampling are not proved",
+        "The source guard pins the configured heap maximum and generic growth checks; it is not a formal execution proof of the C heap or allocation success",
+        "Runtime checks remain separate: make gfx-art-light-check covers authored-art removal/reuse ownership, make gfx-light-check covers slot behavior, and make gfx-shadow-check covers point-shadow images plus the slot-63/64 allocation boundary"
+      ]
+    },
+    "GxProofsGfx.Renderer.LightAttenuation": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Exact-real attenuation cutoff model covers quadratic, linear-only, zero-rate and conservative unbounded policies.",
+      "source": [
+        "resources/shader/standard.frag",
+        "resources/shader/light_cull.comp",
+        "src/renderer/gfx/clusters.c",
+        "src/renderer/gfx/scene.c",
+        "scripts/gfx_light_check.py"
+      ],
+      "guard": "scripts/test_gfx_light_attenuation_contract.py",
+      "gate": "make proofs-full",
+      "scope": "Exact-real reciprocal attenuation monotonicity, quadratic and linear-only brightness epsilon roots, and a radius-policy model distinguishing zero, finite, and unbounded cutoffs",
+      "gaps": [
+        "The Lean model uses exact real coefficients and does not model IEEE F32 non-finite values, C projection, GLSL, a driver, or GPU execution",
+        "Negative-coefficient and unbounded policy branches are modeled, but no general C-to-Lean proof establishes conservative execution for arbitrary malformed light data",
+        "Runtime Phong/PBR captures with smooth/flat normals and GL43 grid parity measure only the tested scene and inputs, not all materials, angles or coefficient ranges",
+        "The current Gouraud vertex path evaluates ambient/sun terms only; point-light attenuation and clustered culling are not covered there"
+      ]
+    },
+    "GxProofs.GridLayout": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Grid layout is tooling/presentation guidance."
+    },
+    "GxProofs.GridRectTransform": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Grid rectangle transforms are UI geometry."
+    },
+    "GxProofs.HaloInset": {
+      "importance": "C",
+      "significance": 15,
+      "justification": "Halo inset is a visual placement detail."
+    },
+    "GxProofs.PipelineOrder": {
+      "importance": "B",
+      "significance": 60,
+      "justification": "Pipeline order affects effects but not persistent engine data."
+    },
+    "GxProofs.PointShadowFaces": {
+      "importance": "B",
+      "significance": 60,
+      "justification": "Face direction errors break point shadows with bounded visual scope."
+    },
+    "GxProofs.PressRoute": {
+      "importance": "B",
+      "significance": 40,
+      "justification": "Press routing affects input handling within the GUI."
+    },
+    "GxProofs.QualityPreset": {
+      "importance": "B",
+      "significance": 35,
+      "justification": "Quality presets select bounded renderer settings."
+    },
+    "GxProofs.Random32": {
+      "importance": "A",
+      "significance": 60,
+      "justification": "PCG32 determinism underpins reproducible randomized tests.",
+      "source": [
+        "src/gxmath/random.c"
+      ],
+      "guard": "scripts/math_pass.py",
+      "gate": "make math-check"
+    },
+    "GxProofs.ReflectFlags": {
+      "importance": "A",
+      "significance": 65,
+      "justification": "Reflection routing flags control planar/SSR resource selection.",
+      "source": [
+        "src/renderer/gfx/mirror.c"
+      ],
+      "guard": "scripts/test_reflection_contract.py",
+      "gate": "make proofs"
+    },
+    "GxProofs.RenderTextureLifecycle": {
+      "importance": "B",
+      "significance": 55,
+      "justification": "Render-target lifecycle leaks affect GPU resources and later frames."
+    },
+    "GxProofs.ResourceLifecycle": {
+      "importance": "B",
+      "significance": 60,
+      "justification": "Resource load/unload state is shared by renderer assets."
+    },
+    "GxProofs.RhiBatch": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Batch submission state affects draw correctness."
+    },
+    "GxProofs.RhiBuf": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Buffer binding/cache state affects vertex/index submission."
+    },
+    "GxProofs.RhiProgramRegistry": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Program registry state affects shader lookup."
+    },
+    "GxProofs.RhiTarget": {
+      "importance": "B",
+      "significance": 60,
+      "justification": "FBO target selection affects pass routing."
+    },
+    "GxProofs.RhiTex": {
+      "importance": "B",
+      "significance": 55,
+      "justification": "Texture binding and cache identity affect sampling."
+    },
+    "GxProofs.ShaderActive": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Active shader state is a per-pass invariant."
+    },
+    "GxProofs.ShadowVP": {
+      "importance": "B",
+      "significance": 55,
+      "justification": "Shadow view/projection constants affect cascade coverage."
+    },
+    "GxProofs.SoloRestore": {
+      "importance": "C",
+      "significance": 20,
+      "justification": "Solo restore is editor state."
+    },
+    "GxProofs.SsrCoverage": {
+      "importance": "A",
+      "significance": 65,
+      "justification": "SSR coverage gates determine whether reflection evidence is visible.",
+      "source": [
+        "src/renderer/gfx/draw.c"
+      ],
+      "guard": "scripts/test_ssr_coverage_contract.py",
+      "gate": "make proofs"
+    },
+    "GxProofs.TAAHalton": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Halton sampling affects temporal jitter quality."
+    },
+    "GxProofs.TitleYield": {
+      "importance": "C",
+      "significance": 15,
+      "justification": "Title yield is presentation-only."
+    },
+    "GxProofs.ToolsState": {
+      "importance": "C",
+      "significance": 15,
+      "justification": "Tools state is editor-local."
+    },
+    "GxProofs.ViewportMath": {
+      "importance": "B",
+      "significance": 40,
+      "justification": "Integer viewport division bounds support presentation geometry.",
+      "gaps": [
+        "Nat arithmetic is not a C float viewport correspondence proof; branch selection is modeled separately"
+      ]
+    },
+    "GxProofs.ViewportRoundtrip": {
+      "importance": "C",
+      "significance": 25,
+      "justification": "Viewport round-trip is a bounded UI mapping."
+    },
+    "GxProofs.VisibleImageSky": {
+      "importance": "B",
+      "significance": 40,
+      "justification": "Sky image selection is a bounded routing policy."
+    },
+    "GxMath.ClipMatrix": {
+      "importance": "A",
+      "significance": 60,
+      "justification": "Clip-space matrix algebra underpins projection and clipping.",
+      "source": [
+        "src/gxmath/matrix.c"
+      ],
+      "guard": "scripts/math_pass.py",
+      "gate": "make math-check"
+    },
+    "GxMath.MatrixSmall": {
+      "importance": "A",
+      "significance": 60,
+      "justification": "Small-matrix determinant/trace helpers are directly used by the engine.",
+      "source": [
+        "src/gxmath/matrix.c"
+      ],
+      "guard": "scripts/math_pass.py",
+      "gate": "make math-check"
+    },
+    "GxMath.NormalMatrix": {
+      "importance": "B",
+      "significance": 55,
+      "justification": "Normal-matrix scale identities have bounded renderer use."
+    },
+    "GxMath.Vector": {
+      "importance": "A",
+      "significance": 60,
+      "justification": "F32v3 algebra is a foundational engine dependency.",
+      "source": [
+        "src/gxmath/vector3.c"
+      ],
+      "guard": "scripts/math_pass.py",
+      "gate": "make math-check"
+    },
+    "GxMath.Vector64": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "F64v4 lerp is a narrow numeric helper."
+    },
+    "GxProofsGfx.Renderer.Affine": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Affine map algebra drives viewport/canvas transforms."
+    },
+    "GxProofsGfx.Renderer.BehindCamera": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Behind-camera classification affects clipping behavior."
+    },
+    "GxProofsGfx.Renderer.CameraLimits": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Camera limit consistency affects authoring bounds."
+    },
+    "GxProofsGfx.Renderer.Engage": {
+      "importance": "B",
+      "significance": 35,
+      "justification": "Engage dock geometry is presentation layout."
+    },
+    "GxProofsGfx.Renderer.FrustumCull": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Frustum containment affects visible geometry."
+    },
+    "GxProofsGfx.Renderer.LightAccumulation": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Per-light accumulation affects shading quality."
+    },
+    "GxProofsGfx.Renderer.ModelPicking": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Picking selects visible models; bounded to interaction."
+    },
+    "GxProofsGfx.Renderer.Pillarbox": {
+      "importance": "B",
+      "significance": 35,
+      "justification": "Aspect-fit selection and geometry affect presentation output.",
+      "source": [
+        "src/gui/gui.c"
+      ],
+      "guard": "scripts/test_window_resize_contract.py",
+      "gate": "make proofs-full",
+      "scope": "Exact-real 0.001 branch tolerance and conditional wide/tall fit geometry",
+      "gaps": [
+        "F32 comparison, pixel rounding and rendering are not proved"
+      ]
+    },
+    "GxProofsGfx.Renderer.ProjectionClipping": {
+      "importance": "A",
+      "significance": 65,
+      "justification": "Clipping/winding algebra governs visible rasterization.",
+      "source": [
+        "src/renderer/gfx/model.c"
+      ],
+      "guard": "scripts/projection_clipping_check.py",
+      "gate": "make projection-clipping-check"
+    },
+    "GxProofsGfx.Renderer.ShadowContain": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Shadow containment affects cascade coverage."
+    },
+    "GxProofsGfx.Renderer.SunUV": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Sun UV mapping controls sky/light alignment."
+    },
+    "GxProofsGfx.Renderer.TextwriterLayout": {
+      "importance": "B",
+      "significance": 35,
+      "justification": "Text layout affects debug/UI readability."
+    },
+    "GxProofsGfx.Renderer.Viewport": {
+      "importance": "B",
+      "significance": 35,
+      "justification": "Docked viewport fitting controls scene visibility around editor panels.",
+      "source": [
+        "src/gui/gui.c"
+      ],
+      "guard": "scripts/test_window_resize_contract.py",
+      "gate": "make proofs-full",
+      "scope": "Exact-real 320px inset, 0.70 scale clamp and conditional width/height fit",
+      "gaps": [
+        "F32 boundary behavior, asynchronous resizing and actual target allocation are external"
+      ]
+    },
+    "GxProofsGfx.Renderer.WaterHeight": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Water height inversion influences buoyancy under explicit convergence assumptions.",
+      "source": [
+        "src/renderer/water.c",
+        "src/renderer/water.h",
+        "resources/shader/water.vert"
+      ],
+      "guard": "scripts/test_water_height_contract.py",
+      "gate": "make proofs-full",
+      "scope": "Exact-real contraction, 12-iteration parameter error and Lipschitz height error bounds.",
+      "gaps": [
+        "Arbitrary authored waves are not proved contractive; float, GLSL execution and triangle interpolation remain external."
+      ]
+    },
+    "GxProofsGfx.Ssr.GlassCapture": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Glass capture routing affects refraction appearance."
+    },
+    "GxProofsGfx.Weather.GodrayContracts": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Godray tap bounds affect weather lighting."
+    },
+    "GxMath.Sdf": {
+      "importance": "A",
+      "significance": 65,
+      "justification": "Signed-distance primitives are renderer-facing geometry contracts; exact-real sphere/unit-normal plane Lipschitz and clearance proofs plus generic 1-Lipschitz step sign preservation are complemented by formula, native sampled-bound and analytic transformed-object depth checks.",
+      "source": [
+        "src/gxmath/sdf.c"
+      ],
+      "guard": "scripts/math_property_check.py",
+      "gate": "make math-check"
+    },
+    "GxMath.Scalar": {
+      "importance": "A",
+      "significance": 60,
+      "justification": "Clamp, lerp, normalize, remap and floor-wrap are ubiquitous scalar helpers; the math oracle, endpoint/round-trip contracts and bounded native wrap fixtures pin their semantics without claiming IEEE edge behavior.",
+      "source": [
+        "src/gxmath/scalar.c"
+      ],
+      "guard": "scripts/math_pass.py",
+      "gate": "make math-check"
+    },
+    "GxMath.Fourier": {
+      "importance": "A",
+      "significance": 60,
+      "justification": "The DFT convention underpins audio/visual spectral paths; explicit character bridges, inverse round trips and Parseval fix the exact transform, while native sampled energy/DC/inverse checks guard execution evidence.",
+      "source": [
+        "src/gxmath/fourier.c"
+      ],
+      "guard": "scripts/math_property_check.py",
+      "gate": "make math-check"
+    },
+    "GxMath.Color": {
+      "importance": "A",
+      "significance": 60,
+      "justification": "Byte channels feed materials and UI throughout gX; signed truncation, channel bounds and normalization/multiply identities protect color semantics without claiming IEEE accuracy.",
+      "source": [
+        "src/gxmath/color.c"
+      ],
+      "guard": "scripts/test_color_units_contract.py",
+      "gate": "make math-check"
+    },
+    "GxMath.Sky": {
+      "importance": "A",
+      "significance": 65,
+      "justification": "Cartesian sky-frame conversions couple observer angles, axis signs and handedness; inverse/norm/orientation proofs and source witnesses protect convention-sensitive sky placement.",
+      "source": [
+        "src/gxmath/convert.c"
+      ],
+      "guard": "scripts/test_sky_contract.py",
+      "gate": "make math-check"
+    },
+    "GxMath.Coordinates": {
+      "importance": "A",
+      "significance": 60,
+      "justification": "Coordinate conversions feed geometric tooling and sky placement; branch-aware inverse/radius contracts protect axis order and inclination semantics without claiming IEEE or singular-origin behavior.",
+      "source": [
+        "src/gxmath/convert.c"
+      ],
+      "guard": "scripts/test_coordinates_contract.py",
+      "gate": "make math-check"
+    },
+    "GxMath.Units": {
+      "importance": "B",
+      "significance": 45,
+      "justification": "Basic length and temperature conversions are bounded numeric utilities; bidirectional identities and source constants matter more than broad engine state.",
+      "source": [
+        "src/gxmath/convert.c"
+      ],
+      "guard": "scripts/test_color_units_contract.py",
+      "gate": "make math-check"
+    },
+    "GxMath.Calculus": {
+      "importance": "B",
+      "significance": 50,
+      "justification": "Finite differences and quadrature support numeric utilities; polynomial and positive-even-step Simpson integral identities pin formulas while preserving convergence, tolerance and IEEE limits.",
+      "source": [
+        "src/gxmath/calculus.c"
+      ],
+      "guard": "scripts/test_simpson_contract.py",
+      "gate": "make math-check"
+    }
+  }
+}
